@@ -21,6 +21,23 @@ public class ContactFunction
         _dataverseService = dataverseService;
     }
 
+    [Function("GetContact")]
+    public async Task<IActionResult> GetContact(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "contacts/{id:guid}")] HttpRequest req,
+        Guid id)
+    {
+        _logger.LogInformation("GetContact function triggred for {ContactId}", id);
+
+        var contact = await _dataverseService.GetContactAsync(id);
+
+        if (contact == null)
+        {
+            return new NotFoundObjectResult(new { error = "Contact not found" });
+        }
+
+        return new OkObjectResult(contact);
+    }
+
     [Function("CreateContact")]
     public async Task<IActionResult> CreateContact(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "contacts")] HttpRequest req)

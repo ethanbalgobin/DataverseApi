@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
+using Microsoft.Xrm.Sdk.Query;
 
 namespace DataverseAPI.Services.Contacts
 {
@@ -67,6 +68,47 @@ namespace DataverseAPI.Services.Contacts
                     Success = false,
                     ErrorMessage = ex.Message
                 };
+            }
+        }
+
+        public async Task<GetContactResponse?> GetContactAsync(Guid contactId)
+        {
+            try
+            {
+                var columns = new ColumnSet(
+                    "contactid", "parentcustomerid", "firstname", "lastname", "emailaddress1",
+                    "gendercode", "mobilephone", "address1_line1", "address1_line2",
+                    "address1_line3", "address1_city", "address1_county", "address1_country",
+                    "address1_addresstypecode");
+
+                var entity = await Task.Run(() => _serviceClient.Retrieve("contact", contactId, columns));
+
+                if (entity is null) return null;
+
+                return new GetContactResponse
+                {
+                    ContactId = entity.Id,
+                    AccountId = entity.GetAttributeValue<EntityReference>("parentcustomerid")?.Id,
+                    FirstName = entity.GetAttributeValue<string>("firstname") ?? string.Empty,
+                    LastName = entity.GetAttributeValue<string>("lastname") ?? string.Empty,
+                    EmailAddress = entity.GetAttributeValue<string>("emailaddress1") ?? string.Empty,
+                    Gender = entity.FormattedValues.ContainsKey("gendercode")
+                        ? entity.FormattedValues["gendercode"] : null,
+                    MobilePhone = entity.GetAttributeValue<string>("mobilephone"),
+                    Address1Line1 = entity.GetAttributeValue<string>("address1_line1"),
+                    Address1Line2 = entity.GetAttributeValue<string>("address1_line2"),
+                    Address1Line3 = entity.GetAttributeValue<string>("address1_line3"),
+                    Address1City = entity.GetAttributeValue<string>("address1_city"),
+                    Address1County = entity.GetAttributeValue<string>("address1_county"),
+                    Address1Country = entity.GetAttributeValue<string>("address1_country"),
+                    Address1Type = entity.FormattedValues.ContainsKey("address1_addresstypecode")
+                        ? entity.FormattedValues["address1_addresstypecode"] : null
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving contact {contactId}", contactId);
+                return null;
             }
         }
     }
