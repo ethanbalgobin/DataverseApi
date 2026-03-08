@@ -23,7 +23,7 @@ public class CreateContact
 
     [Function("CreateContact")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest req)
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req)
     {
         _logger.LogInformation("CreateContact function triggered");
 
