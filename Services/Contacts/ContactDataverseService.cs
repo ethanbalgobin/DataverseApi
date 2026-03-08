@@ -184,5 +184,24 @@ namespace DataverseAPI.Services.Contacts
                 };
             }
         }
+
+        public async Task<DeleteContactResponse> DeleteContactAsync(Guid contactId)
+        {
+            try
+            {
+                await Task.Run(() => _serviceClient.Delete("contact", contactId));
+
+                return new DeleteContactResponse { Success = true };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting contact {ContactId}", contactId);
+                return new DeleteContactResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                };
+            }
+        }
     }
 }
