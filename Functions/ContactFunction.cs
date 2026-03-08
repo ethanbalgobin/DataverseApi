@@ -16,6 +16,10 @@ public class ContactFunction
 {
     private readonly ILogger<ContactFunction> _logger;
     private readonly IContactDataverseService _dataverseService;
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
 
     public ContactFunction(
         ILogger<ContactFunction> logger,
@@ -66,10 +70,7 @@ public class ContactFunction
                 return new BadRequestObjectResult(new { error = "Request body is required" });
             }
 
-            var contactRequest = JsonSerializer.Deserialize<CreateContactRequest>(requestBody, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
+            var contactRequest = JsonSerializer.Deserialize<CreateContactRequest>(requestBody, _jsonOptions);
 
             if (contactRequest is null)
             {
@@ -105,6 +106,61 @@ public class ContactFunction
         {
             _logger.LogError(ex, "Unhandled exception in CreateContact");
             return new ObjectResult(new ErrorResponse{ Error = "An error occurred" })
+            {
+                StatusCode = StatusCodes.Status500InternalServerError
+            };
+        }
+    }
+
+    [Function("UpdateContact")]
+    [OpenApiOperation(operationId: "UpdateContact", tags: ["Contacts"], Summary = "Update an existing contact", Description = "Partially updates a contact record in Dataverse. Only provided fields will be updated.")]
+    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(UpdateContactRequest), Required = true, Description = "The contact fields to update. ContactId is required.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(UpdateContactResponse), Description = "The contact was updated successfully.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "Invalid request body.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "An error occurred while updating the contact.")]
+    public async Task<IActionResult> UpdateContact(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "contacts")] HttpRequest req)
+    {
+        _logger.LogInformation("UpdateContact function triggered");
+        try
+        {
+            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+
+            if (string.IsNullOrWhiteSpace(requestBody))
+            {
+                return new BadRequestObjectResult(new ErrorResponse { Error = "Request body is required" });
+            }
+
+            var updateRequest = JsonSerializer.Deserialize<UpdateContactRequest>(requestBody, _jsonOptions);
+
+            if (updateRequest is null)
+            {
+                return new BadRequestObjectResult(new ErrorResponse { Error = "Invalid request body" });
+            }
+
+            var result = await _dataverseService.UpdateContactAsync(updateRequest);
+
+            if (result.Success)
+            {
+                return new OkObjectResult(result);
+            }
+            else
+            {
+                return new ObjectResult(new ErrorResponse { Error = result.ErrorMessage })
+                {
+                    StatusCode = StatusCodes.Status500InternalServerError
+                };
+            }
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to parse request body");
+            return new BadRequestObjectResult(new ErrorResponse { Error = "Invalid JSON format" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unhandled exception in UpdateContact");
+            return new ObjectResult(new ErrorResponse { Error = "An error occurred" })
             {
                 StatusCode = StatusCodes.Status500InternalServerError
             };
