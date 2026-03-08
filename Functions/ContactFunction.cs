@@ -1,10 +1,14 @@
-using System.Text.Json;
 using DataverseAPI.Models.ContactModels;
+using DataverseAPI.Models;
 using DataverseAPI.Services.Contacts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
+using System.Net;
+using System.Text.Json;
 
 namespace DataverseAPI.Functions;
 
@@ -22,6 +26,10 @@ public class ContactFunction
     }
 
     [Function("GetContact")]
+    [OpenApiOperation(operationId: "GetContact", tags: ["Contacts"], Summary = "Get a contact by ID", Description = "Retrieves a contact record from Dataverse by its unique identifier.")]
+    [OpenApiParameter(name: "id", In = ParameterLocation.Path, Required = true, Type = typeof(Guid), Description = "The unique identifier of the contact.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(GetContactResponse), Description = "The contact was found.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "Contact not found.")]
     public async Task<IActionResult> GetContact(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "contacts/{id:guid}")] HttpRequest req,
         Guid id)
@@ -32,13 +40,18 @@ public class ContactFunction
 
         if (contact == null)
         {
-            return new NotFoundObjectResult(new { error = "Contact not found" });
+            return new NotFoundObjectResult(new ErrorResponse{ Error = "Contact not found" });
         }
 
         return new OkObjectResult(contact);
     }
 
     [Function("CreateContact")]
+    [OpenApiOperation(operationId: "CreateContact", tags: ["Contacts"], Summary = "Create a new contact", Description = "Creates a new contact record in Dataverse.")]
+    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(CreateContactRequest), Required = true, Description = "The contact details to create.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(CreateContactResponse), Description = "The contact was created successfully.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "Invalid request body or validation errors.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "An error occurred while creating the contact.")]
     public async Task<IActionResult> CreateContact(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "contacts")] HttpRequest req)
     {
@@ -60,13 +73,13 @@ public class ContactFunction
 
             if (contactRequest is null)
             {
-                return new BadRequestObjectResult(new { error = "Invalid request body" });
+                return new BadRequestObjectResult(new ErrorResponse{ Error = "Invalid request body" });
             }
 
             var validationErrors = ValidateRequest(contactRequest);
             if (validationErrors.Count > 0)
             {
-                return new BadRequestObjectResult(new { errors = validationErrors });
+                return new BadRequestObjectResult(new ErrorResponse{ Errors = validationErrors });
             }
 
             var result = await _dataverseService.CreateContactAsync(contactRequest);
@@ -77,7 +90,7 @@ public class ContactFunction
             }
             else
             {
-                return new ObjectResult(new { error = result.ErrorMessage })
+                return new ObjectResult(new ErrorResponse{ Error = result.ErrorMessage })
                 {
                     StatusCode = StatusCodes.Status500InternalServerError
                 };
@@ -86,12 +99,12 @@ public class ContactFunction
         catch (JsonException ex)
         {
             _logger.LogError(ex, "Failed to parse request body");
-            return new BadRequestObjectResult(new { error = "Invalid JSON format" });
+            return new BadRequestObjectResult(new ErrorResponse{ Error = "Invalid JSON format" });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception in CreateContact");
-            return new ObjectResult(new { error = "An error occurred" })
+            return new ObjectResult(new ErrorResponse{ Error = "An error occurred" })
             {
                 StatusCode = StatusCodes.Status500InternalServerError
             };
