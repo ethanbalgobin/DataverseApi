@@ -1,29 +1,29 @@
 using System.Text.Json;
-using ContactFunction.Models;
-using ContactFunction.Services;
+using DataverseAPI.Models.ContactModels;
+using DataverseAPI.Services.Contacts;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
-namespace ContactFunction;
+namespace DataverseAPI.Functions;
 
-public class CreateContact
+public class ContactFunction
 {
-    private readonly ILogger<CreateContact> _logger;
-    private readonly IDataverseService _dataverseService;
+    private readonly ILogger<ContactFunction> _logger;
+    private readonly IContactDataverseService _dataverseService;
 
-    public CreateContact(
-        ILogger<CreateContact> logger,
-        IDataverseService dataverseService)
+    public ContactFunction(
+        ILogger<ContactFunction> logger,
+        IContactDataverseService dataverseService)
     {
         _logger = logger;
         _dataverseService = dataverseService;
     }
 
     [Function("CreateContact")]
-    public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req)
+    public async Task<IActionResult> CreateContact(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "contacts")] HttpRequest req)
     {
         _logger.LogInformation("CreateContact function triggered");
 

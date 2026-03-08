@@ -1,4 +1,4 @@
-﻿namespace ContactFunction.Models
+﻿namespace DataverseAPI.Models.ContactModels
 {
     public class CreateContactRequest
     {

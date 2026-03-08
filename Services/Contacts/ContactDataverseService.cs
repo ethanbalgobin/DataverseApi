@@ -1,18 +1,19 @@
-﻿using ContactFunction.Models;
+﻿using DataverseAPI.Models;
+using DataverseAPI.Models.ContactModels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
 
-namespace ContactFunction.Services
+namespace DataverseAPI.Services.Contacts
 {
-    public class DataverseService : IDataverseService
+    public class ContactDataverseService : IContactDataverseService
     {
         private readonly DataverseSettings _settings;
-        private readonly ILogger<DataverseService> _logger;
+        private readonly ILogger<ContactDataverseService> _logger;
         private readonly ServiceClient _serviceClient;
 
-        public DataverseService(IOptions<DataverseSettings> settings, ILogger<DataverseService> logger)
+        public ContactDataverseService(IOptions<DataverseSettings> settings, ILogger<ContactDataverseService> logger)
         {
             _settings = settings.Value;
             _logger = logger;
