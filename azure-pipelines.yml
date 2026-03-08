@@ -6,14 +6,12 @@
 trigger:
 - main
 
-pool: Ethan's Mac
+pool: "Ethan's Mac"
 
 variables:
-  # --- UPDATE THESE TWO VARIABLES ---
   azureSubscription: 'Azure-Dataverse-Deploy'
   functionAppName: 'dataverse-functions' 
   buildConfiguration: 'Release'
-  vmImageName: 'windows-latest'
 
 stages:
 - stage: Build
@@ -21,8 +19,6 @@ stages:
   jobs:
   - job: Build
     displayName: Build Job
-    pool:
-      vmImage: $(vmImageName)
     steps:
     - task: UseDotNet@2
       displayName: 'Install .NET 8 SDK'
@@ -53,8 +49,6 @@ stages:
   - deployment: Deploy
     displayName: Deploy Job
     environment: 'production'
-    pool:
-      vmImage: $(vmImageName)
     strategy:
       runOnce:
         deploy:
