@@ -13,10 +13,11 @@ pool:
 steps:
 - checkout: self
   persistCredentials: true
+  fetchDepth: 0
 
 - script: |
     git config --global user.email "ethanbalgo@hotmail.com"
     git config --global user.name "ethanbalgobin"
 
-    git push https://$(GITHUB_PAT)@github.com/ethanbalgobin/DataverseApi.git HEAD:main
+    git push --force https://$(GITHUB_PAT)@github.com/ethanbalgobin/DataverseApi.git HEAD:main
   displayName: 'Mirror Main Branch to GitHub'
