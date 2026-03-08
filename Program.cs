@@ -1,7 +1,8 @@
-using ContactFunction.Models;
-using ContactFunction.Services;
+using DataverseAPI.Models;
+using DataverseAPI.Services.Contacts;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
+using Microsoft.Azure.Functions.Worker.Extensions.OpenApi.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.PowerPlatform.Dataverse.Client;
@@ -24,6 +25,6 @@ builder.Services.AddSingleton(sp =>
     return new ServiceClient(connectionString);
 });
 
-builder.Services.AddScoped<IDataverseService, DataverseService>();
+builder.Services.AddScoped<IContactDataverseService, ContactDataverseService>();
 
 builder.Build().Run();
