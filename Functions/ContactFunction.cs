@@ -167,6 +167,48 @@ public class ContactFunction
         }
     }
 
+    [Function("DeleteContact")]
+    [OpenApiOperation(operationId: "DeleteContact", tags: ["Contacts"], Summary = "Delete a contact", Description = "Deletes a contact record from Dataverse by its unique identifier.")]
+    [OpenApiParameter(name: "id", In = ParameterLocation.Path, Required = true, Type = typeof(Guid), Description = "The unique identifier of the contact to delete.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(DeleteContactResponse), Description = "The contact was deleted successfully.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "Contact not found.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "An error occurred while deleting the contact.")]
+    public async Task<IActionResult> DeleteContact(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "contacts/{id:guid}")] HttpRequest req, Guid id)
+    {
+        _logger.LogInformation("DeleteContact function triggered for {ContactId}", id);
+
+        try
+        {
+            var result = await _dataverseService.DeleteContactAsync(id);
+
+            if (result.Success)
+            {
+                return new OkObjectResult(result);
+            }
+            else
+            {
+                if (result.ErrorMessage?.Contains("Does Not Exist") == true)
+                {
+                    return new NotFoundObjectResult(new ErrorResponse { Error = "Contact not found" });
+                }
+
+                return new ObjectResult(new ErrorResponse { Error = result.ErrorMessage })
+                {
+                    StatusCode = StatusCodes.Status500InternalServerError
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unhandled exception in DeleteContact");
+            return new ObjectResult(new ErrorResponse { Error = "An error occurred" })
+            {
+                StatusCode = StatusCodes.Status500InternalServerError
+            };
+        }
+    }
+
     private static List<string> ValidateRequest(CreateContactRequest request)
     {
         var errors = new List<string>();
