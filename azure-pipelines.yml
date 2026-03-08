@@ -1,0 +1,63 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool: "Ethan's Mac"
+
+variables:
+  azureSubscription: 'Azure-Dataverse-Deploy'
+  functionAppName: 'dataverse-functions' 
+  buildConfiguration: 'Release'
+
+stages:
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: Build
+    displayName: Build Job
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Install .NET 8 SDK'
+      inputs:
+        version: '8.x'
+
+    - task: DotNetCoreCLI@2
+      displayName: 'Build and Publish'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: '**/*.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+        zipAfterPublish: true
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
+
+- stage: Deploy
+  displayName: Deploy stage
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy Job
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureFunctionApp@2
+            displayName: 'Deploy to Azure Function'
+            inputs:
+              connectedServiceNameARM: '$(azureSubscription)'
+              appType: 'functionApp'
+              appName: '$(functionAppName)'
+              package: '$(Pipeline.Workspace)/drop/**/*.zip'
+              deploymentMethod: 'zipDeploy'
