@@ -1,5 +1,6 @@
 using DataverseAPI.Configuration;
 using DataverseAPI.Models;
+using DataverseAPI.Services.Account;
 using DataverseAPI.Services.Contacts;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
@@ -29,5 +30,6 @@ builder.Services.AddSingleton(sp =>
 });
 
 builder.Services.AddScoped<IContactDataverseService, ContactDataverseService>();
+builder.Services.AddScoped<IAccountDataverseService, AccountDataverseService>();
 
 builder.Build().Run();

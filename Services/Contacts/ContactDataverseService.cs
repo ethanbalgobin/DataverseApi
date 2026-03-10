@@ -1,12 +1,11 @@
 ﻿using DataverseAPI.Models;
 using DataverseAPI.Models.ContactModels;
-using Microsoft.AspNetCore.Server.Kestrel.Transport.NamedPipes;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
-using System.Text.Json;
+using System.ServiceModel;
 
 namespace DataverseAPI.Services.Contacts
 {
@@ -65,6 +64,10 @@ namespace DataverseAPI.Services.Contacts
                     Address1Type = entity.FormattedValues.ContainsKey("address1_addresstypecode")
                         ? entity.FormattedValues["address1_addresstypecode"] : null
                 };
+            }
+            catch (FaultException<OrganizationServiceFault>)
+            {
+                return null;
             }
             catch (Exception ex)
             {
