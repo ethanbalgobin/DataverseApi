@@ -80,7 +80,7 @@ public class ContactFunction
             var validationErrors = ValidateRequest(contactRequest);
             if (validationErrors.Count > 0)
             {
-                return new BadRequestObjectResult(new ErrorResponse{ Errors = validationErrors });
+                return new BadRequestObjectResult(new ErrorResponse{ Error = "Missing required fields", Errors = validationErrors });
             }
 
             var result = await _dataverseService.CreateContactAsync(contactRequest);

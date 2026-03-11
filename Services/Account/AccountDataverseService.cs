@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
+using System.Security.Cryptography;
 using System.ServiceModel;
 
 namespace DataverseAPI.Services.Account
@@ -88,6 +89,50 @@ namespace DataverseAPI.Services.Account
             {
                 _logger.LogError(ex, "Error retrieving account {accountId}", accountId);
                 return null;
+            }
+        }
+
+        public async Task<CreateAccountResponse> CreateAccountAsync(CreateAccountRequest request)
+        {
+            try
+            {
+                var account = new Entity("account")
+                {
+                    ["name"] = request.AccountName,
+                    ["accountnumber"] = RandomNumberGenerator.GetInt32(100000, 100000000).ToString(),
+                    ["accountratingcode"] = new OptionSetValue(request.AccountRating),
+                    ["address1_addresstypecode"] = new OptionSetValue(request.Address1Type),
+                    ["emailaddress1"] = request.EmailAddress,
+                    ["telephone1"] = request.MainPhone,
+                    ["websiteurl"] = request?.Website,
+                    ["address1_name"] = request?.Address1Name,
+                    ["address1_line1"] = request?.Address1Line1,
+                    ["address1_line2"] = request?.Address1Line2,
+                    ["address1_line3"] = request?.Address1Line3,
+                    ["address1_city"] = request?.Address1City,
+                    ["address1_county"] = request?.Address1County,
+                    ["address1_country"] = request?.Address1Country,
+                    ["description"] = request?.Description,
+                    ["primarycontactid"] = request?.PrimaryContactId != null ? new EntityReference("contact", request.PrimaryContactId.Value) : null,
+                    ["parentaccountid"] = request?.ParentAccountId != null ? new EntityReference("account", request.ParentAccountId.Value) : null
+                };
+
+                var accountId = await Task.Run(() => _serviceClient.Create(account));
+
+                return new CreateAccountResponse
+                {
+                    Success = true,
+                    AccountId = accountId
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating account");
+                return new CreateAccountResponse
+                {
+                    Success = false,
+                    ErrorMessage = "An error occurred."
+                };
             }
         }
     }
