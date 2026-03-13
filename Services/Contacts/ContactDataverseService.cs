@@ -1,12 +1,11 @@
 ﻿using DataverseAPI.Models;
 using DataverseAPI.Models.ContactModels;
-using Microsoft.AspNetCore.Server.Kestrel.Transport.NamedPipes;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.PowerPlatform.Dataverse.Client;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Query;
-using System.Text.Json;
+using System.ServiceModel;
 
 namespace DataverseAPI.Services.Contacts
 {
@@ -66,6 +65,10 @@ namespace DataverseAPI.Services.Contacts
                         ? entity.FormattedValues["address1_addresstypecode"] : null
                 };
             }
+            catch (FaultException<OrganizationServiceFault>)
+            {
+                return null;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving contact {contactId}", contactId);
@@ -85,14 +88,14 @@ namespace DataverseAPI.Services.Contacts
                     ["emailaddress1"] = request.EmailAddress,
                     ["fullname"] = $"{request.FirstName} {request.LastName}",
                     ["gendercode"] = new OptionSetValue(request.Gender),
+                    ["address1_addresstypecode"] = new OptionSetValue(request.Address1Type),
                     ["mobilephone"] = request?.MobilePhone,
                     ["address1_line1"] = request?.Address1Line1,
                     ["address1_line2"] = request?.Address1Line2,
                     ["address1_line3"] = request?.Address1Line3,
                     ["address1_city"] = request?.Address1City,
                     ["address1_county"] = request?.Address1County,
-                    ["address1_country"] = request?.Address1Country,
-                    ["address1_addresstypecode"] = new OptionSetValue(request.Address1Type)
+                    ["address1_country"] = request?.Address1Country
                 };
 
                 var contactId = await Task.Run(() => _serviceClient.Create(contact));
