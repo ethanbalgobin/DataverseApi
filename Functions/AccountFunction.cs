@@ -112,6 +112,67 @@ public class AccountFunction
         }
     }
 
+    [Function("UpdateAccount")]
+    [OpenApiOperation(operationId: "UpdateAccount", tags: ["Accounts"], Summary = "Update an existing account", Description = "Partially updates an account record in Dataverse. Only provided fields will be updated.")]
+    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(UpdateAccountRequest), Required = true, Description = "The account fields to update. AccountId is required.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(UpdateAccountResponse), Description = "The account was updated successfully.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.BadRequest, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "Invalid request body.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "An error occurred while updating the account.")]
+    public async Task<IActionResult> UpdateAccount(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "accounts")] HttpRequest req)
+    {
+        _logger.LogInformation("UpdateAccount function triggered");
+
+        try
+        {
+            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+
+            if (string.IsNullOrEmpty(requestBody))
+            {
+                return new BadRequestObjectResult(new ErrorResponse { Error = "Request body is required" });
+            }
+
+            var updateRequest = JsonSerializer.Deserialize<UpdateAccountRequest>(requestBody, _jsonOptions);
+
+            if (updateRequest is null)
+            {
+                return new BadRequestObjectResult(new ErrorResponse { Error = "Invalid request body" });
+            }
+
+            if (updateRequest.AccountId == Guid.Empty)
+            {
+                return new BadRequestObjectResult(new ErrorResponse { Error = "Account ID is required" });
+            }
+
+            var result = await _dataverseService.UpdateAccountAsync(updateRequest);
+
+            if (result.Success)
+            {
+                return new OkObjectResult(result);
+            }
+            else
+            {
+                return new ObjectResult(new ErrorResponse { Error = result.ErrorMessage })
+                {
+                    StatusCode = StatusCodes.Status500InternalServerError
+                };
+            }
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to parse request body");
+            return new BadRequestObjectResult(new ErrorResponse { Error = "Invalid JSON format" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unhandled exception in UpdateContact");
+            return new ObjectResult(new ErrorResponse { Error = "An error occurred" })
+            {
+                StatusCode = StatusCodes.Status500InternalServerError
+            };
+        }
+    }
+
     private static List<string> ValidateRequest(CreateAccountRequest request)
     {
         var errors = new List<string>();

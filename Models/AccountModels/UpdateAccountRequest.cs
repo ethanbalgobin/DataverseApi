@@ -3,26 +3,27 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DataverseAPI.Models.AccountModels
 {
-    public class CreateAccountRequest
+    public class UpdateAccountRequest
     {
-        [OpenApiProperty(Description = "The name of the account.")]
+        [OpenApiProperty(Description = "The GUID of the account record in Dataverse")]
         [Required]
+        public Guid AccountId { get; set; }
+
+        [OpenApiProperty(Nullable = true)]
         public string AccountName { get; set; } = string.Empty;
-        
-        [OpenApiProperty(Description = "The email address associated with the account.")]
-        [Required]
+
+        [OpenApiProperty(Nullable = true)]
         public string EmailAddress { get; set; } = string.Empty;
 
-        [OpenApiProperty(Description = "The main phone number of the account.")]
-        [Required]
+        [OpenApiProperty(Nullable = true)]
         public string MainPhone { get; set; } = string.Empty;
 
         [OpenApiProperty(Nullable = true)]
-        public int AccountRating { get; set; } = 4;
+        public int? AccountRating { get; set; } = 4;
 
         [OpenApiProperty(Nullable = true)]
         public string? Website { get; set; }
-        
+
         [OpenApiProperty(Nullable = true)]
         public string? Address1Name { get; set; }
 
@@ -45,7 +46,7 @@ namespace DataverseAPI.Models.AccountModels
         public string? Address1Country { get; set; }
 
         [OpenApiProperty(Nullable = true)]
-        public int Address1Type { get; set; } = 3;
+        public int? Address1Type { get; set; } = 3;
 
         [OpenApiProperty(Nullable = true)]
         public string? Description { get; set; }
@@ -57,10 +58,9 @@ namespace DataverseAPI.Models.AccountModels
         public Guid? ParentAccountId { get; set; }
     }
 
-    public class CreateAccountResponse
+    public class UpdateAccountResponse
     {
         public bool Success { get; set; }
-        public Guid AccountId { get; set; }
         public string? ErrorMessage { get; set; }
     }
 }

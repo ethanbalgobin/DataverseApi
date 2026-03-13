@@ -6,5 +6,6 @@ namespace DataverseAPI.Services.Account
     {
         Task<GetAccountResponse?> GetAccountAsync(Guid accountId);
         Task<CreateAccountResponse> CreateAccountAsync(CreateAccountRequest request);
+        Task<UpdateAccountResponse> UpdateAccountAsync(UpdateAccountRequest request);
     }
 }

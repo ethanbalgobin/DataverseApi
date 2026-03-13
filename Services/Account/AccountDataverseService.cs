@@ -135,5 +135,71 @@ namespace DataverseAPI.Services.Account
                 };
             }
         }
+
+        public async Task<UpdateAccountResponse> UpdateAccountAsync(UpdateAccountRequest request)
+        {
+            try
+            {
+                var account = new Entity("account", request.AccountId);
+
+                if (!string.IsNullOrEmpty(request.AccountName))
+                    account["name"] = request.AccountName;
+
+                if (!string.IsNullOrEmpty(request.EmailAddress))
+                    account["emailaddress1"] = request.EmailAddress;
+
+                if (!string.IsNullOrEmpty(request.MainPhone))
+                    account["telephone1"] = request.MainPhone;
+
+                if (request.AccountRating.HasValue)
+                    account["accountratingcode"] = new OptionSetValue(request.AccountRating.Value);
+
+                if (request.Website is not null)
+                    account["websiteurl"] = request.Website;
+
+                if (request.Address1Line1 is not null)
+                    account["address1_line1"] = request.Address1Line1;
+
+                if (request.Address1Line2 is not null)
+                    account["address1_line2"] = request.Address1Line2;
+
+                if (request.Address1Line3 is not null)
+                    account["address1_line3"] = request.Address1Line3;
+
+                if (request.Address1City is not null)
+                    account["address1_city"] = request.Address1City;
+
+                if (request.Address1County is not null)
+                    account["address1_county"] = request.Address1County;
+
+                if (request.Address1Country is not null)
+                    account["address1_country"] = request.Address1Country;
+
+                if (request.Address1Type.HasValue)
+                    account["address1_addresstypecode"] = new OptionSetValue(request.Address1Type.Value);
+
+                if (request.PrimaryContactId.HasValue)
+                    account["primarycontactid"] = new EntityReference("contact", request.PrimaryContactId.Value);
+
+                if (request.ParentAccountId.HasValue)
+                    account["parentaccountid"] = new EntityReference("account", request.ParentAccountId.Value);
+
+                if (request.Description is not null)
+                    account["description"] = request.Description;
+
+                await Task.Run(() => _serviceClient.Update(account));
+
+                return new UpdateAccountResponse { Success = true };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating account {Account}", request.AccountId);
+                return new UpdateAccountResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                };
+            }
+        }
     }
 }
