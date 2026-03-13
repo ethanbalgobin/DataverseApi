@@ -201,5 +201,24 @@ namespace DataverseAPI.Services.Account
                 };
             }
         }
+
+        public async Task<DeleteAccountResponse> DeleteAccountAsync(Guid accountId)
+        {
+            try
+            {
+                await Task.Run(() => _serviceClient.Delete("account", accountId));
+
+                return new DeleteAccountResponse { Success = true };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting account {accountId}", accountId);
+                return new DeleteAccountResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                };
+            }
+        }
     }
 }

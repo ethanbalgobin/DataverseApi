@@ -173,6 +173,48 @@ public class AccountFunction
         }
     }
 
+    [Function("DeleteAccount")]
+    [OpenApiOperation(operationId: "DeleteAccount", tags: ["Accounts"], Summary = "Delete an account", Description = "Deletes an account record from Dataverse by its unique identifier.")]
+    [OpenApiParameter(name: "id", In = ParameterLocation.Path, Required = true, Type = typeof(Guid), Description = "The unique identifier of the account to delete.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(DeleteContactResponse), Description = "The account was deleted successfully.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "Account not found.")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.InternalServerError, contentType: "application/json", bodyType: typeof(ErrorResponse), Description = "An error occurred while deleting the account.")]
+    public async Task<IActionResult> DeleteAccount(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "accounts/{id:guid}")] HttpRequest request, Guid id)
+    {
+        _logger.LogInformation("DeleteAccount function triggered for {accountId}", id);
+
+        try
+        {
+            var result = await _dataverseService.DeleteAccountAsync(id);
+
+            if (result.Success)
+            {
+                return new OkObjectResult(result);
+            }
+            else
+            {
+                if (result.ErrorMessage?.Contains("Does not exist") == true)
+                {
+                    return new NotFoundObjectResult(new ErrorResponse { Error = "Account not found" });
+                }
+
+                return new ObjectResult(new ErrorResponse { Error = result.ErrorMessage })
+                {
+                    StatusCode = StatusCodes.Status500InternalServerError
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unhandled exception in DeleteContact");
+            return new ObjectResult(new ErrorResponse { Error = "An error occurred" })
+            {
+                StatusCode = StatusCodes.Status500InternalServerError
+            };
+        }
+    }
+
     private static List<string> ValidateRequest(CreateAccountRequest request)
     {
         var errors = new List<string>();
