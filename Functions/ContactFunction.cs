@@ -80,7 +80,7 @@ public class ContactFunction
             var validationErrors = ValidateRequest(contactRequest);
             if (validationErrors.Count > 0)
             {
-                return new BadRequestObjectResult(new ErrorResponse{ Errors = validationErrors });
+                return new BadRequestObjectResult(new ErrorResponse{ Error = "Missing required fields", Errors = validationErrors });
             }
 
             var result = await _dataverseService.CreateContactAsync(contactRequest);
@@ -122,6 +122,7 @@ public class ContactFunction
         [HttpTrigger(AuthorizationLevel.Anonymous, "patch", Route = "contacts")] HttpRequest req)
     {
         _logger.LogInformation("UpdateContact function triggered");
+
         try
         {
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
@@ -136,6 +137,11 @@ public class ContactFunction
             if (updateRequest is null)
             {
                 return new BadRequestObjectResult(new ErrorResponse { Error = "Invalid request body" });
+            }
+
+            if (updateRequest.ContactId == Guid.Empty)
+            {
+                return new BadRequestObjectResult(new ErrorResponse { Error = "Contact ID is required" });
             }
 
             var result = await _dataverseService.UpdateContactAsync(updateRequest);
